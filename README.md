@@ -30,8 +30,6 @@ Create `react-frontend/.env`:
 VITE_API_BASE_URL=http://localhost:8080/api
 ```
 
-> ⚠️ Confirm the actual variable name(s) used in `src/` (search for `import.meta.env`) — this is inferred, not read from the code.
-
 ### Run in development
 
 ```bash
