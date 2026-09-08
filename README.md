@@ -1,4 +1,3 @@
-```markdown
 # 🎓 AI Study Assistant
 
 ![React](https://img.shields.io/badge/Frontend-React-61DAFB?logo=react&logoColor=black)
@@ -55,7 +54,6 @@ flowchart TD
     G2 -->|Answer| F
     F -->|Answer| B
     B -->|Answer| A
-
 ```
 
 **Upload:** frontend → backend (auth via PostgreSQL) → MinIO (raw file) + Valkey (job) → worker polls → downloads PDF → extracts pages + embeds → stores in pgvector.
@@ -67,7 +65,7 @@ flowchart TD
 ## Tech Stack
 
 | Layer | Stack |
-| --- | --- |
+|---|---|
 | Frontend | React, Vite |
 | Backend | Java, Spring Boot, Maven, MinIO client, Valkey client, PostgreSQL |
 | AI Service | Python, FastAPI, pgvector, Gemini 3.5 Flash, Gemini Embedding-2 |
@@ -84,7 +82,6 @@ AI-Study-Assistant/
 ├── docker-compose.yml                # Orchestrates the full stack
 ├── package.json
 └── .gitignore
-
 ```
 
 ## Quick Start
@@ -92,30 +89,24 @@ AI-Study-Assistant/
 Requires Docker & Docker Compose, plus a Google Gemini API key.
 
 1. **Clone the repository:**
-```bash
-git clone <your-repo-url>
-cd AI-Study-Assistant
-
-```
-
+   ```bash
+   git clone <https://github.com/BikiBaishya03/Ai-Study-Assistant>
+   cd AI-Study-Assistant
+   ```
 
 2. **Configure Environment Variables:**
-Before running the containers, you must configure the environment variables and secrets for each service. See the individual READMEs for detailed placeholder variables:
-* **Python Service:** Create `Ai-python-service/.env`
-* **Spring Boot Backend:** Update `Backend/Ai-Study-Assistant-Backend/src/main/resources/application.properties`
-* **React Frontend:** Create `react-frontend/.env`
-
+   Before running the containers, you must configure the environment variables and secrets for each service. See the individual READMEs for detailed placeholder variables:
+   - **Python Service:** Create `Ai-python-service/.env`
+   - **Spring Boot Backend:** Update `Backend/Ai-Study-Assistant-Backend/src/main/resources/application.properties`
+   - **React Frontend:** Create `react-frontend/.env`
 
 3. **Start the application:**
-```bash
-docker-compose up --build
-
-```
-
-
+   ```bash
+   docker-compose up --build
+   ```
 
 | Service | Default URL |
-| --- | --- |
+|---|---|
 | React frontend | http://localhost:5173 |
 | Spring Boot backend | http://localhost:8080 |
 | Python FastAPI (internal) | http://localhost:8000 |
@@ -129,10 +120,10 @@ Every page stored in pgvector is tagged with the uploading user's email. At quer
 
 ## Roadmap Ideas
 
-* Streaming chat responses
-* Support for additional file types (docx, pptx, OCR for scanned PDFs)
-* Per-document chat scoping (ask about one document instead of all)
-* Upload progress / processing status shown in the History tab
+- Streaming chat responses
+- Support for additional file types (docx, pptx, OCR for scanned PDFs)
+- Per-document chat scoping (ask about one document instead of all)
+- Upload progress / processing status shown in the History tab
 
 ## Contributing
 
@@ -141,7 +132,3 @@ Every page stored in pgvector is tagged with the uploading user's email. At quer
 3. Commit your changes
 4. Open a pull request
 
-
-```
-
-```
