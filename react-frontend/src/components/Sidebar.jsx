@@ -1,14 +1,22 @@
 // src/components/Sidebar.jsx
-import  React, { useRef, useState } from 'react';
-import { Plus, FileText, Sparkles, Loader2 } from 'lucide-react';
+import React, { useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Plus, FileText, Sparkles, Loader2, LogOut, Trash2 } from 'lucide-react';
 
 export default function Sidebar({ 
   documents, 
-  onUploadSuccess, 
+  onUploadSuccess,
+  onDeleteDocument, // <-- Added this prop for deletion
   isOpen, 
 }) {
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef(null);
+  const navigate = useNavigate(); // <-- Added for logout routing
+
+  const handleLogout = () => {
+    localStorage.removeItem('jwt_token'); // Swapped to localStorage
+    navigate('/login');
+  };
 
   const handleFileChange = async (e) => {
     const file = e.target.files[0];
@@ -19,14 +27,18 @@ export default function Sidebar({
     formData.append('file', file);
 
     try {
-      // Endpoint 1: Upload PDF
+      const token = localStorage.getItem('jwt_token'); // Updated to sessionStorage
+
       const response = await fetch('http://localhost:8080/api/v1/study/upload', {
         method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}` 
+        },
         body: formData,
       });
 
       if (response.ok) {
-        const uploadedDoc = await response.json(); // Assuming Spring returns doc details
+        const uploadedDoc = await response.json(); 
         onUploadSuccess(uploadedDoc);
       } else {
         console.error('Upload failed with status:', response.status);
@@ -35,7 +47,7 @@ export default function Sidebar({
       console.error('Network error uploading file:', err);
     } finally {
       setIsUploading(false);
-      e.target.value = null; // Reset file input
+      e.target.value = null; 
     }
   };
 
@@ -93,17 +105,40 @@ export default function Sidebar({
           documents.map((doc, index) => (
             <div 
               key={doc.id || index}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-zinc-800/40 hover:bg-zinc-800/80 border border-zinc-700/30 transition-all cursor-pointer"
+              className="group flex items-center justify-between px-3 py-2.5 rounded-lg bg-zinc-800/40 hover:bg-zinc-800/80 border border-zinc-700/30 transition-all"
             >
-              <FileText className="w-4 h-4 text-blue-400 shrink-0" />
-              <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-3 min-w-0 overflow-hidden cursor-pointer flex-1">
+                <FileText className="w-4 h-4 text-blue-400 shrink-0" />
                 <p className="text-sm font-medium text-zinc-200 truncate">
-                  {doc.originalFileName || doc.name || 'Untitled Document'}
+                  {doc.fileName || doc.originalFilename || doc.name || 'Untitled Document'}
                 </p>
               </div>
+              
+              {/* Delete Button (Appears on Hover) */}
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation(); // Prevents triggering any row-click events
+                  onDeleteDocument(doc.Id);
+                }}
+                className="text-zinc-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity p-1"
+                title="Delete Document"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
             </div>
           ))
         )}
+      </div>
+
+      {/* Logout Button Section at the bottom */}
+      <div className="p-4 border-t border-zinc-800/60 mt-auto">
+        <button 
+          onClick={handleLogout}
+          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-red-400 bg-red-400/10 hover:bg-red-400/20 rounded-xl transition-colors"
+        >
+          <LogOut className="w-4 h-4" />
+          Log Out
+        </button>
       </div>
     </aside>
   );

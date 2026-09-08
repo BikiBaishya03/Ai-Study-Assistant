@@ -3,7 +3,7 @@ import boto3
 import socket
 
 # 1. Bypass Docker underscore rules for Boto3
-minio_hostname = "minio" # or "minio" based on your docker-compose
+minio_hostname = "minio" 
 try:
     minio_ip = socket.gethostbyname(minio_hostname)
 except socket.gaierror:

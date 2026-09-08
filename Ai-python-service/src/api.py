@@ -28,14 +28,7 @@ vectorstore = PGVector(
     connection=DATABASE_URL,
     use_jsonb=True,
 )
-# Change search_type to threshold, and add a score_threshold
-retriever = vectorstore.as_retriever(
-    search_type="similarity_score_threshold",
-    search_kwargs={
-        "k": 3, 
-        "score_threshold": 0.50 # Adjust this! 0.0 is entirely irrelevant, 1.0 is an exact match.
-    }
-) # Get top 3 chunks
+
 
 # 2. Initialize the Gemini LLM for answering
 # Using gemini-2.5-flash for fast, efficient text generation
@@ -58,12 +51,13 @@ prompt = ChatPromptTemplate.from_messages([
 
 # 4. Build the Retrieval Chain
 question_answer_chain = create_stuff_documents_chain(llm, prompt)
-rag_chain = create_retrieval_chain(retriever, question_answer_chain)
+
 
 # --- API ENDPOINTS ---
 
 class QueryRequest(BaseModel):
     question: str
+    userEmail: str
 
 @app.get("/")
 async def root():
@@ -72,7 +66,19 @@ async def root():
 @app.post("/ask")
 def ask_question(request: QueryRequest):
     try:
-        # 1. Use ainvoke() to keep the server completely non-blocking
+        
+        # Change search_type to threshold, and add a score_threshold
+        retriever = vectorstore.as_retriever(
+            search_type="similarity_score_threshold",
+            search_kwargs={
+                "k": 5, 
+                "score_threshold": 0.50,
+                "filter": {"user_email": request.userEmail}
+            }
+        ) # Get top 3 chunks
+        
+        rag_chain = create_retrieval_chain(retriever, question_answer_chain)
+        
         response = rag_chain.invoke({"input": request.question})
         
         # 2. Extract and format sources nicely (e.g., "biki_resume.pdf (Page 1)")

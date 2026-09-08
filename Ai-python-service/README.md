@@ -5,7 +5,7 @@ Python service responsible for PDF ingestion (chunking + embedding) and RAG-base
 > Part of the [AI Study Assistant](../README.md) monorepo. See the root README for the full-stack architecture.
 
 Runs as **two processes** from the same codebase:
-- **API** (`src/api.py`) — FastAPI app exposing the `/chat` endpoint, called synchronously by the Spring Boot backend.
+- **API** (`src/api.py`) — FastAPI app exposing the `/ask` endpoint, called synchronously by the Spring Boot backend.
 - **Worker** (`src/worker.py`) — continuously polls the Valkey queue for new ingestion jobs.
 
 ## Source Layout
@@ -21,7 +21,7 @@ Runs as **two processes** from the same codebase:
 
 ## Responsibilities
 
-- **Ingestion:** worker pulls a job → downloads the PDF from MinIO → `processor.py` chunks the text and embeds each chunk via **Gemini Embedding-2** → chunks + vectors + uploader's email are stored in pgvector.
+- **Ingestion:** worker pulls a job → downloads the PDF from MinIO → `processor.py` extracts text page-by-page and embeds each page via **Gemini Embedding-2** → chunks + vectors + uploader's email are stored in pgvector.
 - **Chat:** API embeds the incoming question → similarity search in pgvector filtered by user email → top-k chunks sent as context to **Gemini 3.5 Flash** → answer returned to the backend.
 
 ## Prerequisites
@@ -48,28 +48,23 @@ Create `Ai-python-service/.env`:
 MINIO_ENDPOINT=minio:9000
 MINIO_ACCESS_KEY=your-access-key
 MINIO_SECRET_KEY=your-secret-key
-MINIO_BUCKET=study-documents
+MINIO_BUCKET=study-materials
 
 # Queue
 VALKEY_HOST=valkey
 VALKEY_PORT=6379
-VALKEY_QUEUE_NAME=pdf_processing_queue
+VALKEY_QUEUE_NAME=pdf-ingestion-queue
 
 # Vector DB
-DATABASE_URL=postgresql://postgres:postgres@postgres:5432/studyassistant
+DATABASE_URL=postgresql://ai_user:secure_password@postgres:5432/study_assistant_db
 
 # Gemini
 GEMINI_API_KEY=your-gemini-api-key
 GEMINI_CHAT_MODEL=gemini-3.5-flash
 GEMINI_EMBEDDING_MODEL=embedding-2
 
-# Chunking
-CHUNK_SIZE=1000
-CHUNK_OVERLAP=200
+# Retrieval
 TOP_K=5
-```
-
-> ⚠️ Names above are inferred from the described flow — check `database.py`, `storage.py`, and `worker.py` for the real variable names and update accordingly.
 
 ### Run the API
 
@@ -91,21 +86,19 @@ Both need to be running for the ingestion → chat pipeline to work end-to-end.
 
 | Method | Endpoint | Called by | Description |
 |---|---|---|---|
-| POST | `/chat` | Spring Boot backend | Similarity search over the user's chunks + Gemini-generated answer |
+| POST | `/ask` | Spring Boot backend | Similarity search over the user's chunks + Gemini-generated answer |
 | GET | `/health` | — | Health check |
 
 ## Data Model (pgvector)
 
-Example shape of the chunks table — update to match `database.py`:
-
 | Column | Type | Notes |
 |---|---|---|
-| `id` | uuid / serial | Primary key |
+| `id` | serial | Primary key |
 | `user_email` | text | Scopes similarity search per user |
-| `document_name` | text | Source PDF reference (MinIO object key) |
-| `chunk_text` | text | Raw chunk content |
-| `embedding` | vector | pgvector column, dimension matches `GEMINI_EMBEDDING_MODEL` |
-| `created_at` | timestamp | |
+| `document_name` | text | Source PDF filename |
+| `page` | integer | Specific page number from the PDF |
+| `chunk_text` | text | Raw text content extracted from the page |
+| `embedding` | vector | pgvector column for similarity search |
 
 ## Docker
 

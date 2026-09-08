@@ -25,6 +25,9 @@ public class QueryHistory {
     @Column(columnDefinition = "TEXT", nullable = false)
     private String answer;
 
+    @Column(name = "user_email")
+    private String userEmail;
+
     @ElementCollection
     @CollectionTable(name = "query_history_source", joinColumns = @JoinColumn(name = "query_history_id"))
     @Column(name = "source_file")

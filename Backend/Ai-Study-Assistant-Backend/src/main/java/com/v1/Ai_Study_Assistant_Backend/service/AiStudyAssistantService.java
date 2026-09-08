@@ -25,11 +25,11 @@ public class AiStudyAssistantService {
                 .baseUrl(fastApiUrl)
                 .build();
         this.queryHistoryRepository = queryHistoryRepository;
-
     }
 
-    public AskResponse getAiAnswer(String userQuestion) {
-        AskRequest request = new AskRequest(userQuestion);
+    public AskResponse getAiAnswer(String userQuestion, String userEmail) {
+        AskRequest request = new AskRequest(userQuestion, userEmail);
+
 
         // 1. Get the response from FastAPI
         AskResponse aiResponse = restClient.post()
@@ -42,6 +42,7 @@ public class AiStudyAssistantService {
         // 2. Map the data to our Entity
         QueryHistory history = new QueryHistory();
         history.setQuestion(userQuestion);
+        history.setUserEmail(userEmail);
 
         if (aiResponse != null) {
             history.setAnswer(aiResponse.answer());
@@ -55,8 +56,8 @@ public class AiStudyAssistantService {
         return aiResponse;
     }
 
-    public List<HistoryResponse> getChatHistory() {
-        return queryHistoryRepository.findAllByOrderByCreatedAtDesc()
+    public List<HistoryResponse> getChatHistory(String userEmail) {
+        return queryHistoryRepository.findByUserEmailOrderByCreatedAtDesc(userEmail)
                 .stream()
                 .map(history -> new HistoryResponse(
                         history.getId(),

@@ -8,5 +8,5 @@ import java.util.List;
 
 @Repository
 public interface QueryHistoryRepository extends JpaRepository<QueryHistory, Long> {
-    List<QueryHistory> findAllByOrderByCreatedAtDesc();
+    List<QueryHistory> findByUserEmailOrderByCreatedAtDesc(String userEmail);
 }

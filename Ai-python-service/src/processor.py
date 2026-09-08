@@ -1,16 +1,17 @@
 import os
+
 import fitz  # PyMuPDF
+from database import DATABASE_URL
 from dotenv import load_dotenv
+from langchain_core.documents import Document
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_postgres import PGVector
-from langchain_core.documents import Document
-
-from storage import get_s3_client, BUCKET_NAME 
-from database import DATABASE_URL              
+from storage import BUCKET_NAME, get_s3_client
 
 load_dotenv()
 
-def process_pdf(object_name, original_filename):
+
+def process_pdf(object_name, original_filename, user_email):
     print(f"Starting processing for: {original_filename}")
     
     s3 = get_s3_client()
@@ -33,7 +34,11 @@ def process_pdf(object_name, original_filename):
                 # Store the CLEAN original_filename in metadata, not the UUID
                 chunks.append(Document(
                     page_content=text, 
-                    metadata={"source": original_filename, "page": page_num + 1}
+                    metadata={  
+                            "source": original_filename,
+                            "page": page_num + 1,
+                            "user_email":user_email
+                        }
                 ))
                 
         doc.close()

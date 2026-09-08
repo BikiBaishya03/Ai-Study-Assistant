@@ -1,9 +1,11 @@
 import os
+
 import psycopg2
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 
 # Fetch the Postgres URL from the environment variables
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://ai_user:secure_password@postgres:5432/study_assistant_db")
+
 
 def init_db():
     print("Connecting to Postgres to initialize vector storage...", flush=True)
@@ -19,12 +21,22 @@ def init_db():
         
         # 2. Create the main table for storing PDF chunks and embeddings
         # (Assuming 1536 dimensions for standard OpenAI/common embeddings)
+        # cur.execute("""
+        #     CREATE TABLE IF NOT EXISTS document_chunks (
+        #         id SERIAL PRIMARY KEY,
+        #         document_name TEXT NOT NULL,
+        #         chunk_text TEXT NOT NULL,
+        #         embedding vector(1536) 
+        #     );
+        # """)
         cur.execute("""
             CREATE TABLE IF NOT EXISTS document_chunks (
                 id SERIAL PRIMARY KEY,
+                user_email TEXT NOT NULL,
                 document_name TEXT NOT NULL,
+                page INTEGER,
                 chunk_text TEXT NOT NULL,
-                embedding vector(1536) 
+                embedding vector(768) 
             );
         """)
         
@@ -36,5 +48,7 @@ def init_db():
     except Exception as e:
         print(f"Database initialization failed: {e}", flush=True)
 
+
 if __name__ == "__main__":
     init_db()
+    
