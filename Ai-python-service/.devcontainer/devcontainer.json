@@ -2,7 +2,7 @@
   "name": "AI Study Assistant - Python Worker",
   "dockerComposeFile": "../../docker-compose.yml", 
   "service": "python-ai-worker",
-  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  "workspaceFolder": "/app",
   "remoteUser": "root",
   "customizations": {
     "vscode": {
