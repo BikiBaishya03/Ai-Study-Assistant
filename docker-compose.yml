@@ -1,3 +1,4 @@
+# docker-compose.yml
 networks:
   rag_network:
     driver: bridge
@@ -8,126 +9,96 @@ volumes:
   valkey_data:
 
 services:
-
   # ==========================================
   # INFRASTRUCTURE LAYER
   # ==========================================
-
+  
   postgres:
     image: pgvector/pgvector:pg16
     container_name: rag_postgres
     restart: unless-stopped
-
     environment:
       POSTGRES_USER: ai_user
       POSTGRES_PASSWORD: secure_password
       POSTGRES_DB: study_assistant_db
-
     ports:
       - "5432:5432"
-
     volumes:
       - postgres_data:/var/lib/postgresql/data
-
     networks:
       - rag_network
-
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ai_user -d study_assistant_db"]
       interval: 5s
       timeout: 5s
       retries: 5
-      start_period: 10s
-
 
   valkey:
     image: valkey/valkey:latest
     container_name: rag_valkey
     restart: unless-stopped
-
     ports:
       - "6379:6379"
-
     volumes:
       - valkey_data:/data
-
     networks:
       - rag_network
-
     healthcheck:
       test: ["CMD", "valkey-cli", "ping"]
       interval: 5s
-      timeout: 3s
+      timeout: 10s
       retries: 5
-      start_period: 5s
-
 
   minio:
-  build:
-    context: ./minio
-  container_name: rag_minio
-  restart: unless-stopped
-
-  environment:
-    MINIO_ROOT_USER: admin
-    MINIO_ROOT_PASSWORD: password123
-
-  command: server /data --console-address ":9001"
-
-  ports:
-    - "9000:9000"
-    - "9001:9001"
-
-  volumes:
-    - minio_data:/data
-
-  networks:
-    - rag_network
-
-  healthcheck:
-    test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
-    interval: 10s
-    timeout: 5s
-    retries: 5
-    start_period: 10s
-
+    image: minio/minio:latest
+    container_name: rag_minio
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: admin
+      MINIO_ROOT_PASSWORD: password123
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000" # API Port
+      - "9001:9001" # Web UI Console
+    volumes:
+      - minio_data:/data
+    networks:
+      - rag_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 40s
+      retries: 3
 
   # ==========================================
   # APPLICATION LAYER
   # ==========================================
 
   python-ai-worker:
-    build:
-      context: ./Ai-python-service
-
+    build: 
+      context: ./ai-python-service  # Directory containing your Python FastAPI/LangGraph Dockerfile
     container_name: rag_python_worker
     restart: unless-stopped
-
-    volumes:
+    # No ports exposed because it acts as a background queue consumer/internal API
+    volumes:                                   # <--- ADD THIS LINE
       - ./Ai-python-service:/app
-
     env_file:
       - ./Ai-python-service/.env
-
     environment:
-      DATABASE_URL: postgresql://ai_user:secure_password@postgres:5432/study_assistant_db
-      VALKEY_URL: redis://valkey:6379/0
-      MINIO_URL: http://minio:9000
-      MINIO_ACCESS_KEY: admin
-      MINIO_SECRET_KEY: password123
-      LANGCHAIN_TRACING_V2: "true"
-      LANGCHAIN_ENDPOINT: https://api.smith.langchain.com
-      LANGCHAIN_PROJECT: study_assistant_python
-
-    depends_on:
-      postgres:
-        condition: service_healthy
-
-      valkey:
-        condition: service_healthy
-
-      minio:
-        condition: service_healthy
-
-    networks:
-      - rag_network
+      - DATABASE_URL=postgresql://ai_user:secure_password@postgres:5432/study_assistant_db
+      - VALKEY_URL=redis://valkey:6379/0
+      - MINIO_URL=http://minio:9000
+      - MINIO_ACCESS_KEY=admin
+      - MINIO_SECRET_KEY=password123
+      - LANGCHAIN_TRACING_V2=true
+      - LANGCHAIN_ENDPOINT=https://api.smith.langchain.com 
+      - LANGCHAIN_PROJECT=study_assistant_python 
+    depends_on: 
+      postgres: 
+        condition: service_healthy 
+      valkey: 
+        condition: service_healthy 
+      minio: 
+        condition: service_healthy 
+    networks: 
+      - rag_network 
