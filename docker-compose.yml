@@ -75,29 +75,29 @@ services:
   # ==========================================
 
   python-ai-worker:
-  build: 
-    context: ./Ai-python-service    # <-- was lowercase, now matches your actual folder
-  container_name: rag_python_worker
-  restart: unless-stopped
-  volumes:
-    - ./Ai-python-service:/app
-  env_file:
-    - ./Ai-python-service/.env
-  environment:
+    build:
+      context: ./Ai-python-service
+    container_name: rag_python_worker
+    restart: unless-stopped
+    volumes:
+      - ./Ai-python-service:/app
+    env_file:
+      - ./Ai-python-service/.env
+    environment:
       - DATABASE_URL=postgresql://ai_user:secure_password@postgres:5432/study_assistant_db
       - VALKEY_URL=redis://valkey:6379/0
       - MINIO_URL=http://minio:9000
       - MINIO_ACCESS_KEY=admin
       - MINIO_SECRET_KEY=password123
       - LANGCHAIN_TRACING_V2=true
-      - LANGCHAIN_ENDPOINT=https://api.smith.langchain.com 
-      - LANGCHAIN_PROJECT=study_assistant_python 
-  depends_on: 
-      postgres: 
-        condition: service_healthy 
-      valkey: 
-        condition: service_healthy 
-      minio: 
-        condition: service_healthy 
-  networks: 
-      - rag_network 
+      - LANGCHAIN_ENDPOINT=https://api.smith.langchain.com
+      - LANGCHAIN_PROJECT=study_assistant_python
+    depends_on:
+      postgres:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    networks:
+      - rag_network
