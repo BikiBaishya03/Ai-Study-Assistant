@@ -92,12 +92,12 @@ services:
       - LANGCHAIN_TRACING_V2=true
       - LANGCHAIN_ENDPOINT=https://api.smith.langchain.com 
       - LANGCHAIN_PROJECT=study_assistant_python 
-    depends_on: 
+  depends_on: 
       postgres: 
         condition: service_healthy 
       valkey: 
         condition: service_healthy 
       minio: 
         condition: service_healthy 
-    networks: 
+  networks: 
       - rag_network 
