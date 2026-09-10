@@ -1,6 +1,7 @@
 import os
-import boto3
 import socket
+
+import boto3
 
 # 1. Bypass Docker underscore rules for Boto3
 minio_hostname = "minio" 

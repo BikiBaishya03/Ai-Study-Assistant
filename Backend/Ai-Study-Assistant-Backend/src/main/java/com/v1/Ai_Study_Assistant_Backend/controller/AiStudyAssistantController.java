@@ -15,6 +15,7 @@ import java.security.Principal;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/study")
@@ -61,16 +62,18 @@ public class AiStudyAssistantController {
         try {
             String userEmail = principal.getName();
 
-            // 3. Upload to MinIO and push to Valkey (Returns the UUID)
-            String objectName = documentUploadService.uploadAndQueueProcessing(file, userEmail);
+            // 1. Decide the object name yourself, before uploading anything
+            String objectName = UUID.randomUUID() + "-" + file.getOriginalFilename();
 
-            // 4. Save the record to the PostgreSQL database
+            // 2. Save to Postgres now — you already have everything you need
             UserDocument doc = new UserDocument();
             doc.setFileName(file.getOriginalFilename());
             doc.setObjectName(objectName);
             doc.setUserEmail(userEmail);
-
             UserDocument savedDoc = documentRepository.save(doc);
+
+            // 3. Now call the existing combined method, passing the known docId + objectName
+            documentUploadService.uploadAndQueueProcessing(file, userEmail, objectName, savedDoc.getId());
 
             // 5. Return the saved document object back to React
             return ResponseEntity.ok(savedDoc);

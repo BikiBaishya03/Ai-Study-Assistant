@@ -3,6 +3,9 @@ import json
 import redis
 import time
 from processor import process_pdf
+import psycopg2
+from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
+from database import DATABASE_URL
 
 VALKEY_URL = os.getenv("VALKEY_URL", "redis://localhost:6379/0")
 QUEUE_NAME = "pdf-ingestion-queue" # Matches Spring Boot queue name
@@ -27,6 +30,7 @@ def main():
     while True:
         try:
             # THE FIX: Use standard lpop (non-blocking) instead of blpop!
+            print(client.llen("pdf-ingestion-queue"))
             message = client.lpop(QUEUE_NAME)
             
             # If the queue is empty, sleep for 2 seconds and loop again
@@ -45,6 +49,7 @@ def main():
             object_name = job_data.get("objectName")
             original_filename = job_data.get("originalFileName") or job_data.get("originalFilename") 
             user_email = job_data.get("userEmail")
+            doc_id = job_data.get("docId")
             
             if not object_name:
                 print("Job missing 'objectName', skipping...", flush=True)
@@ -55,11 +60,26 @@ def main():
             # Pass all fields to the processor
             chunks = process_pdf(object_name, original_filename, user_email)
             
+            conn = psycopg2.connect(DATABASE_URL)
+            conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+            
+            cursor = conn.cursor()
             if chunks:
+                
+                cursor.execute(
+                    "UPDATE user_documents SET status = 'READY', processed_at = NOW() WHERE id = %s",
+                    (doc_id,),
+                )
+                
                 print(f"Finished pipeline for {original_filename}.", flush=True)
             else:
+                cursor.execute(
+                    "UPDATE user_documents SET status = 'FAiled', processed_at = NOW() WHERE id = %s",
+                        (doc_id,),
+                )
                 print(f"Failed pipeline for {original_filename}.", flush=True)
-                
+            cursor.close()
+            conn.close()
         except KeyboardInterrupt:
             print("\nWorker shutting down.")
             break

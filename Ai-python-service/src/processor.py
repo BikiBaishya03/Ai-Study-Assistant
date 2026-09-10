@@ -1,11 +1,12 @@
 import os
 
 import fitz  # PyMuPDF
-from database import DATABASE_URL
 from dotenv import load_dotenv
 from langchain_core.documents import Document
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_postgres import PGVector
+
+from database import DATABASE_URL
 from storage import BUCKET_NAME, get_s3_client
 
 load_dotenv()

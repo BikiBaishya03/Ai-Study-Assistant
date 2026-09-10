@@ -31,11 +31,10 @@ public class DocumentUploadService {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public String uploadAndQueueProcessing(MultipartFile file, String userEmail) {
+    public void uploadAndQueueProcessing(MultipartFile file, String userEmail, String objectName, Long docId) {
         try {
             // 1. Generate a unique object name (e.g., "550e8400-e29b-41d4-a716-446655440000_notes.pdf")
             String originalFilename = file.getOriginalFilename();
-            String objectName = UUID.randomUUID() + "_" + originalFilename;
 
             // 2. Automate Bucket Creation: Check if bucket exists, create if not
             boolean found = minioClient.bucketExists(BucketExistsArgs.builder().bucket(bucketName).build());
@@ -57,13 +56,13 @@ public class DocumentUploadService {
             }
 
             // 4. Create the job payload and push to Valkey (Redis) queue
-            IngestionJob job = new IngestionJob(bucketName, objectName, originalFilename, userEmail);
+            IngestionJob job = new IngestionJob( docId, bucketName, objectName, originalFilename, userEmail);
 
             // rightPush adds the job to the end of the list (FIFO queue)
             redisTemplate.opsForList().rightPush(QUEUE_NAME, job);
 
             // THE ONLY CHANGE: Return the objectName UUID instead of a sentence!
-            return objectName;
+            return ;
 
         } catch (Exception e) {
             throw new RuntimeException("Failed to upload file to MinIO or queue to Valkey", e);

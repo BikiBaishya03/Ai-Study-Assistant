@@ -75,16 +75,15 @@ services:
   # ==========================================
 
   python-ai-worker:
-    build: 
-      context: ./ai-python-service  # Directory containing your Python FastAPI/LangGraph Dockerfile
-    container_name: rag_python_worker
-    restart: unless-stopped
-    # No ports exposed because it acts as a background queue consumer/internal API
-    volumes:                                   # <--- ADD THIS LINE
-      - ./Ai-python-service:/app
-    env_file:
-      - ./Ai-python-service/.env
-    environment:
+  build: 
+    context: ./Ai-python-service    # <-- was lowercase, now matches your actual folder
+  container_name: rag_python_worker
+  restart: unless-stopped
+  volumes:
+    - ./Ai-python-service:/app
+  env_file:
+    - ./Ai-python-service/.env
+  environment:
       - DATABASE_URL=postgresql://ai_user:secure_password@postgres:5432/study_assistant_db
       - VALKEY_URL=redis://valkey:6379/0
       - MINIO_URL=http://minio:9000

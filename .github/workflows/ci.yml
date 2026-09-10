@@ -57,8 +57,12 @@ jobs:
           java-version: '21' 
           cache: 'maven'
 
+      - name: Make mvnw executable
+        run: chmod +x ./mvnw
+
       - name: Verify Build
         run: ./mvnw clean compile
+
 
   # -------------------------------------------------------------
   # 3. AI PYTHON SERVICE (Using Dev Container & Pytest)
@@ -87,3 +91,14 @@ jobs:
             # Run the 5 tests with PYTHONPATH set to the current directory 
             # so 'from src.api import app' works perfectly
             PYTHONPATH=. pytest tests/
+
+      - name: Create dummy .env for CI
+        run: |
+          cat <<EOF > ./Ai-python-service/.env
+          DATABASE_URL=postgresql://ai_user:secure_password@postgres:5432/study_assistant_db
+          VALKEY_URL=redis://valkey:6379/0
+          MINIO_URL=http://minio:9000
+          MINIO_ACCESS_KEY=admin
+          MINIO_SECRET_KEY=password123
+          GEMINI_API_KEY=dummy-key-for-ci
+          EOF
