@@ -30,7 +30,7 @@ def main():
     while True:
         try:
             # THE FIX: Use standard lpop (non-blocking) instead of blpop!
-            print(client.llen("pdf-ingestion-queue"))
+            #print(client.llen("pdf-ingestion-queue"))
             message = client.lpop(QUEUE_NAME)
             
             # If the queue is empty, sleep for 2 seconds and loop again
